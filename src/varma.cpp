@@ -1,4 +1,5 @@
 #include <vector>
+#include <algorithm>
 #include <iostream>
 
 #include "Rcpp.h"
@@ -75,15 +76,15 @@ void CMatrix::append(CMatrix M){
          elements.push_back(M.elements[i]);
       }
    } else {
-//      cerr<<"rbind Error:  Can't rbind matrices with different column sizes.\n";
+      //      cerr<<"rbind Error:  Can't rbind matrices with different column sizes.\n";
    }
 }
 
 void CMatrix::append(std::vector<double> row){
-   if (ncol() == 0 || ncol() == row.size()){
+   if (row.size()>0 && (ncol() == 0 || ncol() == row.size())){
       elements.push_back(row);
    } else {
-//      cerr<<"rbind Error:  Can't rbind matrices with different column sizes.\n";
+      //      cerr<<"rbind Error:  Can't rbind matrices with different column sizes.\n";
    }
 }
 
@@ -121,7 +122,6 @@ std::vector<double> CMatrix::operator()(int p, bool is_row = true) {
 
 
 // MARK: CMatrix Utilities
-
 CMatrix Cnegative(CMatrix &A) {
    CMatrix B = A;
    if (A.elements.size() > 0){
@@ -178,16 +178,6 @@ CMatrix ToCMatrix (Rcpp::NumericMatrix RMat){
    return C;
 }
 
-//Rcpp::NumericMatrix ToMatrix (CMatrix M){
-//   Rcpp::NumericMatrix C(M.nrow(), M.ncol());
-//   for (int i = 0; i < M.nrow(); i++) {
-//      for (int j =0; j < M.ncol(); j++) {
-//         C(i,j) = *M(i+1,j+1);
-//      }
-//   }
-//   return C;
-//}
-
 CMatrix rbind(CMatrix A, CMatrix  B) {
    CMatrix C;
    if (A.ncol()==B.ncol()){
@@ -196,7 +186,7 @@ CMatrix rbind(CMatrix A, CMatrix  B) {
          C.elements.push_back(B.elements[i]);
       }
    } else {
-//      cerr<<"rbind Error:  Can't rbind matrices with different column sizes.\n";
+      //      cerr<<"rbind Error:  Can't rbind matrices with different column sizes.\n";
    }
    
    return C;
@@ -210,13 +200,11 @@ CMatrix cbind(CMatrix A, CMatrix  B) {
          C.elements[i].insert(C.elements[i].end(), B.elements[i].begin(), B.elements[i].end());
       }
    } else {
-//      cerr<<"rbind Error:  Can't cbind matrices with different row sizes.\n";
+      //      cerr<<"rbind Error:  Can't cbind matrices with different row sizes.\n";
    }
    
    return C;
 }
-
-
 
 CMatrix as_matrix (std::vector<double> x, bool is_as_row = true){
    CMatrix C;
@@ -233,7 +221,6 @@ CMatrix as_matrix (std::vector<double> x, bool is_as_row = true){
    return C;
 }
 
-
 CMatrix prod(CMatrix A, CMatrix B) {
    CMatrix C(0, A.nrow(),B.ncol());
    if (A.ncol() == B.nrow()) {
@@ -249,7 +236,7 @@ CMatrix prod(CMatrix A, CMatrix B) {
          }
       }
    } else {
-//      cerr<<"CMatrix Prod Error:  Incompatible matrices.\n";
+      //      cerr<<"CMatrix Prod Error:  Incompatible matrices.\n";
    }
    
    return C;
@@ -288,7 +275,7 @@ CMatrix matrix_prod (CMatrix &A, CMatrix &B, int p, int P)
          C= cbind(C, prod(Cnegative(m1),m2));
       }
    }
-
+   
    return C;
 }
 
@@ -344,8 +331,8 @@ int Varma::checkMaskFormat(CMatrix & Mask) {
          } else if (*Mask(i,j) == 0) {
             // Skip zero elements
          } else {
-//            cerr<<"Invalid Mask CMatrix:  CMatrix contains elements others than 0 or 1 ("
-//            <<i<<", "<<j<<") = "<<*Mask(i,j)<<"\n";
+            //            cerr<<"Invalid Mask CMatrix:  CMatrix contains elements others than 0 or 1 ("
+            //            <<i<<", "<<j<<") = "<<*Mask(i,j)<<"\n";
             break;
          }
       }
@@ -365,8 +352,6 @@ void Varma::fillParamFixed(CMatrix & Mask, std::vector<double> ParamFixed, bool 
    
    if (hasMean){
       // Initiate Ph0 to be zero
-      Ph0.resize(k);
-      fill(Ph0.begin(),Ph0.end(),0);
       for (int i = 1; i <= k; i++) {
          if (*Mask(1,i) == 1) {
             Ph0.at(i-1) = QParamFixed.back();
@@ -377,31 +362,29 @@ void Varma::fillParamFixed(CMatrix & Mask, std::vector<double> ParamFixed, bool 
    }
    
    if (p > 0){
-      PH = CMatrix(0, kp, k);
-      for (int j = 1; j <= k; j++) {
-         for (int i = 1; i<= kp; i++) {
+      for (int i = 1; i<= kp; i++) {
+         for (int j = 1; j <= k; j++) {
             if (*Mask(i_start+i, j) == 1) {
                PH.elements[i-1][j-1] = QParamFixed.back();
-               QParamFixed.pop_back();
             }
+            QParamFixed.pop_back();
          }
       }
-      i_start += kp;
+      i_start += p;
    }
    
    if (q > 0){
-      TH = CMatrix(0, kq, k);
-      for (int j = 1; j<= k; j++) {
-         for (int i = 1; i <= kq; i++) {
+      for (int i = 1; i <= kq; i++) {
+         for (int j = 1; j<= k; j++) {
             if (*Mask(i_start+i,j) == 1) {
                //               *TH(i_start+i, j) = QParamFixed.back();
                TH.elements[i-1][j-1] = QParamFixed.back();
-               QParamFixed.pop_back();
             }
+            QParamFixed.pop_back();
          }
       }
    } else if (QParamFixed.size() != 0){
-//      cerr<<"Init with parameters error:  Too many parameters\n";
+      //      cerr<<"Init with parameters error:  Too many parameters\n";
    }
    
 }
@@ -530,25 +513,18 @@ Varma::Varma (CMatrix & TimeSeries, CMatrix & Mask, std::vector<double> & ParamF
    p = ar_p;
    q = ma_q;
    
-   // Check compactible:  Mask and Parameters
-   int mask_size = checkMaskFormat(Mask);
+   // Parametric initializations
+   Ph0.resize(k);
+   fill(Ph0.begin(),Ph0.end(),0);
+   PH = CMatrix(0, k*p, k);
+   TH = CMatrix(0, k*q, k);
    
-   if (mask_size != ParamFixed.size()) {
-//      cerr<<"Input error:  Fixed mask and parameters provided are of different size.\n";
-//      cerr<<"   Mask contains "<<mask_size<<" 1s but "<<ParamFixed.size()<<" is provided.";
-   } else {
-      // Check compactible:  Mask and p, q, k
-      int row_const = hasMean? 1 : 0;
-      
-      if (row_const+k*(p+q) != Mask.nrow()) {
-//         cerr<<"Input error:  Fixed mask has a wrong row number.\n";
-//         cerr<<"Need "<<row_const+k*(p+q)<<" rows but the mask matrix has "<<Mask.nrow()<<" rows.\n";
-      } else {
-         fillParamFixed(Mask, ParamFixed, hasMean);
-         
-         compResiduals();
-      }
+   if (ParamFixed.size()>0){
+      fillParamFixed(Mask, ParamFixed, hasMean);
    }
+   
+   compResiduals();
+   
 }
 
 // MARK: SVarma
@@ -568,7 +544,7 @@ public:
    bool matrix_prod_method_switch; // swi
    CMatrix Phi; //
    CMatrix Theta; //
-
+   
    CMatrix Beta; //!!! Local property in Varma
    std::vector<int> ARlags;
    std::vector<int> MAlags;
@@ -582,11 +558,11 @@ public:
    int Q;  // SMA order Q
    bool hasMean;  // Whether mean is included, i.e. Ph0.size() ==0
    
-   SVarma (CMatrix & TimeSeries, CMatrix & Mask, std::vector<double> & ParamFixed, bool isMeanIncluded, std::vector<int> Orders, std::vector<int> ARlags, std::vector<int> MAlags, CMatrix & Sresi, bool swi);
+   SVarma (CMatrix & TimeSeries, CMatrix & Mask, std::vector<double> & ParamFixed, bool isMeanIncluded, std::vector<int> Orders, std::vector<int> arlags, std::vector<int> malags, CMatrix Sresi, bool swi);
 private:
    int checkMaskFormat(CMatrix & Mask);
    void fillParamFixed(CMatrix & Mask, std::vector<double> ParamFixed, bool isMeanIncluded);
-   void compResiduals(CMatrix & Sresiduals);
+   void compResiduals();
 };
 
 int SVarma::checkMaskFormat(CMatrix & Mask) {
@@ -598,8 +574,8 @@ int SVarma::checkMaskFormat(CMatrix & Mask) {
          } else if (*Mask(i,j) == 0) {
             // Skip zero elements
          } else {
-//            cerr<<"Invalid Mask CMatrix:  CMatrix contains elements others than 0 or 1 ("
-//            <<i<<", "<<j<<") = "<<*Mask(i,j)<<"\n";
+            //            cerr<<"Invalid Mask CMatrix:  CMatrix contains elements others than 0 or 1 ("
+            //            <<i<<", "<<j<<") = "<<*Mask(i,j)<<"\n";
             break;
          }
       }
@@ -608,7 +584,6 @@ int SVarma::checkMaskFormat(CMatrix & Mask) {
 }
 
 void SVarma::fillParamFixed(CMatrix & Mask, std::vector<double> ParamFixed, bool isMeanIncluded) {
-   CMatrix Beta;
    int kp = k * p;
    int kq = k * q;
    int kP = k * P;
@@ -630,73 +605,67 @@ void SVarma::fillParamFixed(CMatrix & Mask, std::vector<double> ParamFixed, bool
          }
       }
       i_start = 1;
+      Beta.append(Ph0);
    }
-   
    
    if (nar > 0){
       if (p > 0){
          PH = CMatrix(0, kp, k);
-         for (int j = 1; j <= k; j++) {
-            for (int i = 1; i<= kp; i++) {
+         for (int i = 1; i<= kp; i++) {
+            for (int j = 1; j <= k; j++) {
                if (*Mask(i_start+i, j) == 1) {
                   PH.elements[i-1][j-1] = QParamFixed.back();
-                  QParamFixed.pop_back();
                }
+               QParamFixed.pop_back();
             }
          }
-         i_start += kp;
+         i_start += p;
       }
       
       if (P > 0){
          sPH = CMatrix(0, kP, k);
-         for (int j = 1; j <= k; j++) {
-            for (int i = 1; i<= kP; i++) {
+         for (int i = 1; i<= kP; i++) {
+            for (int j = 1; j <= k; j++) {
                if (*Mask(i_start+i, j) == 1) {
                   sPH.elements[i-1][j-1] = QParamFixed.back();
-                  QParamFixed.pop_back();
                }
+               QParamFixed.pop_back();
             }
          }
-         i_start += kP;
+         i_start += P;
       }
-      
    }
+   
    
    if (nar >0){
       if (q > 0){
          TH = CMatrix(0, kq, k);
-         for (int j = 1; j<= k; j++) {
-            for (int i = 1; i <= kq; i++) {
+         for (int i = 1; i <= kq; i++) {
+            for (int j = 1; j<= k; j++) {
                if (*Mask(i_start+i,j) == 1) {
-                  //               *TH(i_start+i, j) = QParamFixed.back();
                   TH.elements[i-1][j-1] = QParamFixed.back();
-                  QParamFixed.pop_back();
                }
+               QParamFixed.pop_back();
             }
          }
-      } else if (QParamFixed.size() != 0){
-//         cerr<<"Init with parameters error:  Too many parameters\n";
+         i_start += q;
       }
       
       if (Q > 0){
          sTH = CMatrix(0, kQ, k);
-         for (int j = 1; j<= k; j++) {
-            for (int i = 1; i <= kQ; i++) {
+         for (int i = 1; i <= kQ; i++) {
+            for (int j = 1; j<= k; j++) {
                if (*Mask(i_start+i,j) == 1) {
-                  //               *TH(i_start+i, j) = QParamFixed.back();
                   sTH.elements[i-1][j-1] = QParamFixed.back();
-                  QParamFixed.pop_back();
                }
+               QParamFixed.pop_back();
             }
          }
-      } else if (QParamFixed.size() != 0){
-//         cerr<<"Init with parameters error:  Too many parameters\n";
       }
    }
    
    // Building Beta Matrix
-   Beta.append(Ph0);
-   if (p>0 && p>0){
+   if (p>0 && P>0){
       if (matrix_prod_method_switch) {
          Phi = matrix_prod_alt(PH, sPH, p, P);
       }
@@ -721,8 +690,10 @@ void SVarma::fillParamFixed(CMatrix & Mask, std::vector<double> ParamFixed, bool
       else {
          Theta = matrix_prod(TH, sTH, q, Q);
       }
+
       CMatrix Theta_transposed = Ctranspose(Theta);
       Beta.append(Cnegative(Theta_transposed));
+
    }
    
    if (q>0 && Q==0) {
@@ -734,19 +705,25 @@ void SVarma::fillParamFixed(CMatrix & Mask, std::vector<double> ParamFixed, bool
       CMatrix sTH_transposed = Ctranspose(sTH);
       Beta.append(Cnegative(sTH_transposed));
    }
+   
 }
 
-void SVarma::compResiduals(CMatrix & Sresi) {
-   Residuals = Sresi;
+void SVarma::compResiduals() {
    
-   double Obs_Const;
-   if (hasMean){
-      Obs_Const = 1;
-   }
+   double Obs_Const = 0;
    
-   int i_start = std::max(nar,nma)+1;
+   int i_start = std::max(*std::max_element(ARlags.begin(),ARlags.end()),
+                          *std::max_element(MAlags.begin(),MAlags.end()))+1;
+   
    for (int t = i_start; t<= nT; t++) {
+      
       std::vector<double> Obs_Past;
+      
+      if (hasMean){
+         Obs_Const = 1;
+         Obs_Past.insert(Obs_Past.end(), Obs_Const);
+      }
+      
       if (nar > 0) {
          for (int j=1; j<=nar; j++){
             int jj = ARlags[j-1];
@@ -763,27 +740,56 @@ void SVarma::compResiduals(CMatrix & Sresi) {
          }
       }
       
-      Obs_Past.insert(Obs_Past.begin(), Obs_Const);
+//      cout<<"Obs_Past\n";
+//      for (int i = 0; i < Obs_Past.size(); ++i)
+//      {
+//         std::cout << Obs_Past[i]<< ' ';
+//      }
+//      std::cout << std::endl;
       
-      std::vector<double> Estimate_ARMA = prod(as_matrix(Obs_Past), Beta)(1);
+      std::vector<double> Estimate_ARMA =  prod(as_matrix(Obs_Past), Beta)(1);
+      
+//      cout<<"Estimate_ARMA\n";
+//      for (int i = 0; i < Estimate_ARMA.size(); ++i)
+//      {
+//            std::cout << Estimate_ARMA[i]<< ' ';
+//      }
+//      std::cout << std::endl;
+
       
       std::vector<double> Res_Row;
       for (int r = 0; r < Estimate_ARMA.size(); r++){
          Res_Row.push_back(*Obs(t,r+1)-Estimate_ARMA[r]);
       }
+      
+//      cout<<"Res_Row\n";
+//      for (int i = 0; i < Res_Row.size(); ++i)
+//      {
+//         std::cout << Res_Row[i]<< ' ';
+//      }
+//      std::cout << std::endl;
+      
       Residuals.append(Res_Row);
+      
+      //      Rcout<<Residuals.nrow()<<":";
+      //      Rcout<<Residuals.ncol()<<"\n";
+      //      Rcout<<"DONE";
    }
    
-   Residuals.elements.erase (Residuals.elements.begin(),
-                             Residuals.elements.begin() + i_start-1);
+   //   Residuals.elements.erase (Residuals.elements.begin(),
+   //                             Residuals.elements.begin() + i_start-1);
 }
 
-SVarma::SVarma (CMatrix & TimeSeries, CMatrix & Mask, std::vector<double> & ParamFixed, bool isMeanIncluded, std::vector<int> Orders, std::vector<int> ARlags, std::vector<int> MAlags, CMatrix & Sresi, bool swi)
+SVarma::SVarma (CMatrix & TimeSeries, CMatrix & Mask, std::vector<double> & ParamFixed, bool isMeanIncluded, std::vector<int> Orders, std::vector<int> arlags, std::vector<int> malags, CMatrix Sresi, bool swi)
 {
    Obs = TimeSeries;
    k = (int) Obs.ncol();
    nT = (int) Obs.nrow();
    hasMean = isMeanIncluded;
+   ARlags = arlags;
+   MAlags = malags;
+   matrix_prod_method_switch = swi;
+   Residuals = Sresi;
    
    p = Orders[0];  // AR_p
    q = Orders[2];  // MA_q
@@ -795,27 +801,35 @@ SVarma::SVarma (CMatrix & TimeSeries, CMatrix & Mask, std::vector<double> & Para
    nma = (int) MAlags.size();
    
    int i_start = 0;
-   i_start = std::max(ARlags.back(), MAlags.back())+1;
+   i_start = std::max(nar,nma)+1;
    
+   Ph0.resize(k);
+   fill(Ph0.begin(),Ph0.end(),0);
    
-   // Check compactible:  Mask and Parameters
-   int mask_size = checkMaskFormat(Mask);
-   
-   if (mask_size != ParamFixed.size()) {
-//      cerr<<"Input error:  Fixed mask and parameters provided are of different size.\n";
-//      cerr<<"   Mask contains "<<mask_size<<" 1s but "<<ParamFixed.size()<<" is provided.";
-   } else {
-      // Check compactible:  Mask and p, q, k
-      int row_const = hasMean? 1 : 0;
-      
-      if (row_const+k*(nar+nma) != Mask.nrow()) {
-//         cerr<<"Input error:  Fixed mask has a wrong row number.\n";
-//         cerr<<"Need "<<row_const+k*(p+q)<<" rows but the mask matrix has "<<Mask.nrow()<<" rows.\n";
-      } else {
-         fillParamFixed(Mask, ParamFixed, hasMean);
-         compResiduals(Sresi);
-      }
+   if (ParamFixed.size()>0){
+      fillParamFixed(Mask, ParamFixed, hasMean);
    }
+   
+   compResiduals();
+   
+   //   // Check compactible:  Mask and Parameters
+   //   int mask_size = checkMaskFormat(Mask);
+   //
+   //   if (ParamFixed.size() > 0 && mask_size != ParamFixed.size()) {
+   //      //      cerr<<"Input error:  Fixed mask and parameters provided are of different size.\n";
+   //      //      cerr<<"   Mask contains "<<mask_size<<" 1s but "<<ParamFixed.size()<<" is provided.";
+   //   } else {
+   //      // Check compactible:  Mask and p, q, k
+   //      int row_const = hasMean? 1 : 0;
+   //
+   //      if (Mask.nrow()>0 && row_const+k*(nar+nma) != Mask.nrow()) {
+   //         //         cerr<<"Input error:  Fixed mask has a wrong row number.\n";
+   //         //         cerr<<"Need "<<row_const+k*(p+q)<<" rows but the mask matrix has "<<Mask.nrow()<<" rows.\n";
+   //      } else {
+   //         if (Mask.nrow()>0){
+   //         }
+   //      }
+   //   }
    
    
 }
@@ -830,12 +844,12 @@ public:
    int nT; // # Obs
    
    int q;  // MA order q
-
+   
    std::vector<double> Ph0; // Constants -- OC: mu
-
+   
    CMatrix Theta;
    CMatrix TH;
-
+   
    bool hasMean;  // Whether mean is included, i.e. Ph0.size() == 0
    
    VMA(CMatrix & TimeSeries, CMatrix & Mask, std::vector<double> & ParamFixed,int ma_q, bool isMeanIncluded);
@@ -891,7 +905,7 @@ VMA::VMA(CMatrix & TimeSeries, CMatrix & Mask, std::vector<double> & ParamFixed,
    // Theta = rbind[theta_1',theta_2', ..., theta_q']
    // Checking the invertibility of t(Theta)
    TH = Ctranspose(Theta);
-
+   
    if (q > 1) {
       CMatrix ones = Cidentity((q-1)*k);
       CMatrix zeros(0, (q-1)*k, k);
@@ -955,10 +969,73 @@ VMADemean::VMADemean(CMatrix & TimeSeries, CMatrix & Mask, std::vector<double> &
    }
 }
 
+//// MARK: C++ Tests
+//// DISABLE BEFORE RCPP COMPILATION
+//// Simple Testing Hook
+//#include <iostream>
+//using namespace std;
+//int main()
+//{
+//
+//   vector<vector<double>> v_ts = {{-0.0292703823, 0.1573609555},
+//      { 0.0372512706, 0.0521857532},
+//      { 0.0235674694, 0.0962579349},
+//      { 0.0470139648,-0.0288308257},
+//      {-0.0037105794,-0.0328304493},
+//      {-0.0180049875, 0.0162402070},
+//      { 0.0106610818, 0.1548291059},
+//      {-0.0301422174,-0.0904390518},
+//      { 0.0396409695, 0.0760945436},
+//      {-0.0673435721, 0.0364782086},
+//      { 0.1215213578,-0.1651562937},
+//      {-0.0201011793, 0.0756995955},
+//      {-0.0704442506,-0.0827667627}};
+//   CMatrix ts;
+//   ts.elements = v_ts;
+//
+//   CMatrix mask;
+//   vector<vector<double> > vmask= {{1,1},
+//      {1,1},
+//      {1,1},
+//      {1,1},
+//      {1,1},
+//      {1,1},
+//      {1,1},
+//      {1,1}};
+//   mask.elements = vmask;
+//
+//   vector<double> para = {0.47060115, 0.34307399, -0.01166759, 0.65750521, 0.02718972, -0.11545498, -0.44461381, 0.34057492, 0.55534434, 0.32011203, -0.17779979, 0.61911798};
+//
+//   CMatrix sresi;
+//   vector<vector<double> > vres={{-0.027976252, 0.149541915},
+//      { 0.036022005, 0.090611637},
+//      { 0.024888085, 0.119404344},
+//      { 0.047406506, 0.004776690},
+//      {-0.001365036,-0.030033854},
+//      {-0.017034638, 0.008623434},
+//      {-0.008160689, 0.018193184},
+//      { 0.074266628, 0.077125385},
+//      { 0.003889799, 0.030456210},
+//      {-0.039460172,-0.081422937},
+//      { 0.045624466,-0.103575659},
+//      {-0.088993913, 0.037356216},
+//      { 0.098713262, 0.157652697}};
+//   sresi.elements = vres;
+//
+//   vector<int> sorder = {0,1,1,1,0,1};
+//   vector<int> ar = {12};
+//   vector<int> ma = {1,12,13};
+//   bool swi = false;
+//   bool ismean = false;
+//
+//   //   Varma varma(ts, mask, para, ar, ma, ismean);
+//   SVarma svarma(ts, mask, para, ismean, sorder, ar, ma, ts, swi);
+//   //   SVarma::SVarma (CMatrix & TimeSeries, CMatrix & Mask, std::vector<double> & ParamFixed, bool isMeanIncluded, std::vector<int> Orders, std::vector<int> ARlags, std::vector<int> MAlags, CMatrix & Sresi, bool swi)
+//
+//   cout << "Hello World!";
+//}
 
-
-
-// MARK: Interfaces
+// MARK: RCpp Interfaces
 
 RcppExport SEXP GetVarmaResiduals(SEXP _timeSeries,
                                   SEXP _mask,
@@ -983,11 +1060,9 @@ RcppExport SEXP GetVarmaResiduals(SEXP _timeSeries,
    int ma_q = Rcpp::as<int>(_q);
    bool isMeanIncluded = Rcpp::as<bool>(_isMeanIncluded);
    
-//   Varma varma(TimeSeries, Mask, ParamFixed, ar_p, ma_q, isMeanIncluded);
+   Varma varma(TimeSeries, Mask, ParamFixed, ar_p, ma_q, isMeanIncluded);
    
-   
-//   CMatrix Residuals = varma.Residuals;
-   return Rcpp::wrap(ParamFixed);
+   return Rcpp::wrap(varma.Residuals.elements);
 }
 
 
@@ -1003,17 +1078,19 @@ RcppExport SEXP GetSVarmaResiduals(SEXP _timeSeries,
                                    ) {
    
    Rcpp::NumericMatrix RTimeSeries(_timeSeries);
+   
    Rcpp::NumericMatrix RMask(_mask);
    Rcpp::NumericMatrix RSresi(_sresi);
-
+   
    CMatrix TimeSeries = ToCMatrix(RTimeSeries);
+   
    CMatrix Mask = ToCMatrix(RMask);
    CMatrix Sresi = ToCMatrix(RSresi);
    
    std::vector<int> Orders = Rcpp::as< std::vector<int> >(_orders);
    std::vector<int> ARLags = Rcpp::as< std::vector<int> >(_arlags);
    std::vector<int> MALags = Rcpp::as< std::vector<int> >(_malags);
-
+   
    std::vector<double> ParamFixed;
    if (!Rf_isNull(_paramFixed)){
       ParamFixed= Rcpp::as< std::vector<double> >(_paramFixed);
@@ -1021,25 +1098,27 @@ RcppExport SEXP GetSVarmaResiduals(SEXP _timeSeries,
    
    bool isMeanIncluded = Rcpp::as<bool>(_isMeanIncluded);
    bool swi = Rcpp::as<bool>(_swi);
-
+   
    SVarma svarma(TimeSeries, Mask, ParamFixed, isMeanIncluded, Orders, ARLags, MALags, Sresi, swi);
    
-   CMatrix Residuals = svarma.Residuals;
-   return Rcpp::wrap(Residuals.elements);
+   return Rcpp::wrap(svarma.Residuals.elements);
 }
 
 RcppExport SEXP GetVMAObs(SEXP _timeSeries,
-                              SEXP _mask,
-                              SEXP _paramFixed,
-                              SEXP _q,
-                              SEXP _isMeanIncluded
-                              ) {
+                          SEXP _mask,
+                          SEXP _paramFixed,
+                          SEXP _q,
+                          SEXP _isMeanIncluded
+                          ) {
    
    Rcpp::NumericMatrix RTimeSeries(_timeSeries);
-   Rcpp::NumericMatrix RMask(_mask);
    
    CMatrix TimeSeries = ToCMatrix(RTimeSeries);
-   CMatrix Mask = ToCMatrix(RMask);
+   CMatrix Mask;
+   if (!Rf_isNull(_mask)){
+      Rcpp::NumericMatrix RMask(_mask);
+      Mask = ToCMatrix(RMask);
+   }
    
    std::vector<double> ParamFixed;
    if (!Rf_isNull(_paramFixed)){
@@ -1047,7 +1126,7 @@ RcppExport SEXP GetVMAObs(SEXP _timeSeries,
    }
    
    int ma_q = Rcpp::as<int>(_q);
-
+   
    bool isMeanIncluded = Rcpp::as<bool>(_isMeanIncluded);
    
    VMADemean VMADemean(TimeSeries, Mask, ParamFixed, ma_q, isMeanIncluded);
@@ -1055,11 +1134,11 @@ RcppExport SEXP GetVMAObs(SEXP _timeSeries,
 }
 
 RcppExport SEXP GetVMATH(SEXP _timeSeries,
-                          SEXP _mask,
-                          SEXP _paramFixed,
-                          SEXP _q,
-                          SEXP _isMeanIncluded
-                          ) {
+                         SEXP _mask,
+                         SEXP _paramFixed,
+                         SEXP _q,
+                         SEXP _isMeanIncluded
+                         ) {
    
    Rcpp::NumericMatrix RTimeSeries(_timeSeries);
    Rcpp::NumericMatrix RMask(_mask);
