@@ -1,8 +1,10 @@
-e989ee7bab9cbdd73e9f4a3451bcfc83 *DESCRIPTION
+abd91b2f1dffb15801da46565323bb13 *DESCRIPTION
 bb0816d79ec3bb7fc78eec5a040fffff *NAMESPACE
 758f0b77e4fc1c21a48404a14c17bfd4 *NEWS.md
-069d59a640638b84765851e7fb463c71 *R/MTS.R
+08c4be12306386b5f80f6533830573f4 *R/LLKvarma.R
+b4e51466e2d9665d13dd075179c2ff97 *R/MTS.R
 865669e458e37f53acc7b9d7de030119 *R/MVM.R
+af7e996b39860e3685255ea703ff63a5 *R/RcppExports.R
 41f6a62a8395c999096ba792dad329ae *R/VARMACpp.R
 d69fac909e667e64b0635ec14da5a223 *R/VMACpp.R
 437cda64d53d0376196c50cc041a6422 *R/sVARMACpp.R
@@ -70,7 +72,7 @@ c09c0a1b1a00868e08c610ada185b6a1 *man/VechM.Rd
 1e70a609836ac1a6c804643d0e80c79c *man/Vpmiss.Rd
 95784e17415931ef2bf7a329175e3e22 *man/apca.Rd
 6e4addd396d5c28cbf21f73f2df94b03 *man/archTest.Rd
-690b6d20ff1cc22f35fe2658df726ef2 *man/backtest.Rd
+4f7eaee414cf6d6dd8a09bed125dda3e *man/backtest.Rd
 1a0d474d880508673b69818344ddd4b2 *man/ccm.Rd
 cd65c2cd92955a34f5ecb71c22bd486c *man/comVol.Rd
 b20695734ba5bd58d6d381fc6bc96f2f *man/dccFit.Rd
@@ -102,4 +104,6 @@ c19544abced16cebf6a5141df0fe209d *man/tfm1.Rd
 8bf7e5be8951caf79db24b1658a7ac60 *man/tfm2.Rd
 b3f86c20b81b51f5162874977d38784d *src/Makevars
 73505498722ad4b07b0ddb3067e92523 *src/Makevars.win
+0df7200dd6ed491e36e2265aee32ef1a *src/RcppExports.cpp
 50234e79d59063041d33fc0f1205855a *src/varma.cpp
+a23f1a7c92f0b0f6e75dab13fccc7647 *src/varmaResiduals.cpp
