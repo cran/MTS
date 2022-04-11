@@ -3,6 +3,7 @@
 
 #include <RcppEigen.h>
 #include <Rcpp.h>
+#include "varma.h"
 
 using namespace Rcpp;
 
@@ -28,4 +29,18 @@ BEGIN_RCPP
     rcpp_result_gen = Rcpp::wrap(varmaResiduals(zt, Ph0, PH, TH, p, q, include_mean, beta));
     return rcpp_result_gen;
 END_RCPP
+}
+
+static const R_CallMethodDef CallEntries[] = {
+    {"_MTS_varmaResiduals", (DL_FUNC) &_MTS_varmaResiduals, 8},
+    {"GetVarmaResiduals", (DL_FUNC) &GetVarmaResiduals, 6},
+    {"GetSVarmaResiduals", (DL_FUNC) &GetSVarmaResiduals, 9},
+    {"GetVMAObs", (DL_FUNC) &GetVMAObs, 5},
+    {"GetVMATH", (DL_FUNC) &GetVMATH, 5},
+    {NULL, NULL, 0}
+};
+
+RcppExport void R_init_MTS(DllInfo *dll) {
+    R_registerRoutines(dll, NULL, CallEntries, NULL, NULL);
+    R_useDynamicSymbols(dll, FALSE);
 }

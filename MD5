@@ -1,4 +1,4 @@
-abd91b2f1dffb15801da46565323bb13 *DESCRIPTION
+a4cb639b50f46b67c11cf492e8cdee52 *DESCRIPTION
 bb0816d79ec3bb7fc78eec5a040fffff *NAMESPACE
 758f0b77e4fc1c21a48404a14c17bfd4 *NEWS.md
 08c4be12306386b5f80f6533830573f4 *R/LLKvarma.R
@@ -104,6 +104,7 @@ c19544abced16cebf6a5141df0fe209d *man/tfm1.Rd
 8bf7e5be8951caf79db24b1658a7ac60 *man/tfm2.Rd
 b3f86c20b81b51f5162874977d38784d *src/Makevars
 73505498722ad4b07b0ddb3067e92523 *src/Makevars.win
-0df7200dd6ed491e36e2265aee32ef1a *src/RcppExports.cpp
+4f02d586a3c4926182590e97e375739a *src/RcppExports.cpp
 50234e79d59063041d33fc0f1205855a *src/varma.cpp
-a23f1a7c92f0b0f6e75dab13fccc7647 *src/varmaResiduals.cpp
+c9bc6778890a1b8aaf4a2d4ff4fcf6ce *src/varma.h
+e191ac78d6c6a362f9c6c58daa05237a *src/varmaResiduals.cpp
