@@ -1164,7 +1164,7 @@
    VARirf <- list(irf=Si,orthirf=orSi)
 }
 
-"mq" <- function(x,lag=24,adj=0){
+"mq" <- function(x,lag=24,adj=0,return.only=FALSE){
    # Compute multivariate Ljung-Box test statistics
    #
    # adj: adjustment for the degrees of freedomm in the chi-square distribution.
@@ -1194,13 +1194,18 @@
    }
    pvs=QM[,4]
    dimnames(QM) = list(names(pvs),c("  m  ","    Q(m) ","   df  "," p-value"))
-   cat("Ljung-Box Statistics: ","\n")
-   printCoefmat(QM,digits = 3)
-   #
-   par(mfcol=c(1,1))
-   plot(pvs,ylim=c(0,1),xlab="m",ylab="prob",main="p-values of Ljung-Box statistics")
-   abline(h=c(0))
-   lines(rep(0.05,lag),lty=2,col='blue')
+   if(!return.only){
+      cat("Ljung-Box Statistics: ","\n")
+      printCoefmat(QM,digits = 3)
+      #
+      par(mfcol=c(1,1))
+      plot(pvs,ylim=c(0,1),xlab="m",ylab="prob",main="p-values of Ljung-Box statistics")
+      abline(h=c(0))
+      lines(rep(0.05,lag),lty=2,col='blue')
+   }
+   else{
+      return(QM)
+   }
 }
 
 ###

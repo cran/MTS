@@ -6,7 +6,7 @@
 cross-correlation matrices
 }
 \usage{
-mq(x, lag = 24, adj = 0)
+mq(x, lag = 24, adj = 0, return.only=FALSE)
 }
 \arguments{
   \item{x}{The data matrix of a vector time series or residual series of a 
@@ -16,6 +16,9 @@ fitted multivariate model.
 }
   \item{adj}{Adjustment for the degrees of freedom for the Ljung-Box 
 statistics. This is used for residual series. Default is zero.
+}
+   \item{return.only}{If TRUE, the results are returned, but not printed or
+plotted. Default is FALSE.
 }
 }
 \details{Computes the multivariate Ljung-Box statistics and their 
